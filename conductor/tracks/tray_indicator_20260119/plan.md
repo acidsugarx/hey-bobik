@@ -3,10 +3,10 @@
 ## Phase 1: Tray Infrastructure
 Integrate the tray library and set up the main thread loop.
 
-- [ ] Task: Set up Tray Library & Icons
-    - [ ] `go get github.com/getlantern/systray`
-    - [ ] Add placeholder icon assets (embedded bytes)
-    - [ ] Implement `internal/ui/tray` package
+- [x] Task: Set up Tray Library & Icons (45ce8f4)
+    - [x] `go get github.com/getlantern/systray`
+    - [x] Add placeholder icon assets (embedded bytes)
+    - [x] Implement `internal/ui/tray` package
 - [ ] Task: Refactor Main for Tray Compatibility
     - [ ] Move orchestrator logic to a goroutine to free up the main thread for the tray
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
