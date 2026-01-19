@@ -5,8 +5,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"text/template"
+	"time"
 )
 
 // Recorder defines the interface for audio capture.
@@ -36,6 +38,16 @@ type ObsidianService interface {
 	RewriteLastNote(content string) error
 }
 
+// TimerService defines the interface for setting timers.
+type TimerService interface {
+	Start(name string, duration time.Duration)
+}
+
+// ClockService defines the interface for time reporting.
+type ClockService interface {
+	GetCurrentTime() string
+}
+
 // Orchestrator coordinates the audio capture, STT, and tool execution.
 type Orchestrator struct {
 	Recorder Recorder
@@ -43,23 +55,39 @@ type Orchestrator struct {
 	Notifier Notifier
 	LLM      LLMClient
 	Obsidian ObsidianService
+	Timer    TimerService
+	Clock    ClockService
 	Memory   *ContextMemory
 }
 
-const systemPrompt = `Ты — Бобик. Твоя задача: вернуть очищенный текст заметки без лишних слов.
-НЕ используй жирный шрифт. НЕ пиши слова "Суть", "Текст", "Исправлено". 
-Если пользователь просит "исправить" или "изменить" последнюю запись, ОБЯЗАТЕЛЬНО начни ответ с "UPDATE:".
-В остальных случаях пиши ТОЛЬКО текст.
+const systemPrompt = `Ты — Бобик, интеллектуальный помощник для Linux. 
+Твоя задача: проанализировать ввод пользователя и выбрать одно действие.
+
+Доступные действия:
+1. NOTE: Записать или обновить заметку в Obsidian.
+2. TIMER: Поставить таймер (нужно указать длительность в секундах).
+3. TIME: Сообщить текущее время.
+
+Формат ответа: ACTION: [ACTION_NAME] | ARG: [VALUE]
+
+Правила:
+- Если просят "записать" или "заметка" -> ACTION: NOTE | ARG: [Текст заметки]
+- Если просят "исправить" или "изменить" последнюю запись -> ACTION: NOTE | ARG: UPDATE: [Новый текст]
+- Если просят "таймер" или "напомни через" -> ACTION: TIMER | ARG: [Кол-во секунд]
+- Если спрашивают "сколько времени" или "час" -> ACTION: TIME | ARG: none
 
 Примеры:
 Ввод: "запиши купить хлеб"
-Ответ: Купить хлеб
+Ответ: ACTION: NOTE | ARG: Купить хлеб
 
 Ввод: "исправь на батон"
-Ответ: UPDATE: Купить батон
+Ответ: ACTION: NOTE | ARG: UPDATE: Купить батон
 
-Ввод: "запиши напомни позвонить маме вечером"
-Ответ: Позвонить маме вечером
+Ввод: "поставь таймер на 5 минут"
+Ответ: ACTION: TIMER | ARG: 300
+
+Ввод: "сколько времени"
+Ответ: ACTION: TIME | ARG: none
 
 Контекст:
 {{.Context}}
@@ -155,21 +183,69 @@ func (o *Orchestrator) handleCommand(ctx context.Context, audioChan <-chan []int
 		"Input":   text,
 	})
 
-	noteContent, err := o.LLM.Generate(ctx, "", promptBuf.String())
+	rawOutput, err := o.LLM.Generate(ctx, "", promptBuf.String())
 	if err != nil {
 		o.Notifier.Notify(ctx, "Bobik Error", "LLM failed")
 		return
 	}
-	log.Printf("LLM Raw output: %s", noteContent)
+	log.Printf("LLM Raw output: %s", rawOutput)
 
-	// 4. Determine Action and Save
+	// 4. Parse Action and Argument
+	action, arg := o.parseLLMOutput(rawOutput)
+	log.Printf("Parsed Action: %s, Arg: %s", action, arg)
+
+	// 5. Dispatch Tool
+	switch action {
+	case "NOTE":
+		o.handleNoteAction(ctx, text, arg)
+	case "TIMER":
+		o.handleTimerAction(ctx, text, arg)
+	case "TIME":
+		o.handleTimeAction(ctx, text)
+	default:
+		log.Printf("Unknown action: %s", action)
+		o.Notifier.Notify(ctx, "Bobik", "Не понял команду")
+	}
+
+	// Drain any leftover audio from the channel to avoid "ghost" commands
+	for len(audioChan) > 0 {
+		<-audioChan
+	}
+}
+
+func (o *Orchestrator) parseLLMOutput(output string) (string, string) {
+	// Format: ACTION: [ACTION_NAME] | ARG: [VALUE]
+	parts := strings.Split(output, "|")
+	action := ""
+	arg := ""
+
+	for _, part := range parts {
+		subParts := strings.SplitN(strings.TrimSpace(part), ":", 2)
+		if len(subParts) < 2 {
+			continue
+		}
+		key := strings.TrimSpace(subParts[0])
+		val := strings.TrimSpace(subParts[1])
+
+		if key == "ACTION" {
+			action = val
+		} else if key == "ARG" {
+			arg = val
+		}
+	}
+	return action, arg
+}
+
+func (o *Orchestrator) handleNoteAction(ctx context.Context, rawInput, arg string) {
 	isUpdate := false
-	if strings.HasPrefix(noteContent, "UPDATE:") {
+	noteContent := arg
+	if strings.HasPrefix(arg, "UPDATE:") {
 		isUpdate = true
-		noteContent = strings.TrimPrefix(noteContent, "UPDATE:")
+		noteContent = strings.TrimPrefix(arg, "UPDATE:")
 		noteContent = strings.TrimSpace(noteContent)
 	}
 
+	var err error
 	if isUpdate {
 		err = o.Obsidian.RewriteLastNote(noteContent)
 	} else {
@@ -182,17 +258,31 @@ func (o *Orchestrator) handleCommand(ctx context.Context, audioChan <-chan []int
 		return
 	}
 
-	// 5. Update Memory
-	action := "Saved note"
+	actionDesc := "Saved note"
 	if isUpdate {
-		action = "Updated last note"
+		actionDesc = "Updated last note"
 	}
-	o.Memory.Add(text, fmt.Sprintf("%s: %s", action, noteContent))
+	o.Memory.Add(rawInput, fmt.Sprintf("%s: %s", actionDesc, noteContent))
+	o.Notifier.Notify(ctx, "Bobik", "Заметка сохранена")
+}
 
-	o.Notifier.Notify(ctx, "Bobik", "Note saved to Daily Notes")
-
-	// Drain any leftover audio from the channel to avoid "ghost" commands
-	for len(audioChan) > 0 {
-		<-audioChan
+func (o *Orchestrator) handleTimerAction(ctx context.Context, rawInput, arg string) {
+	seconds, err := strconv.Atoi(arg)
+	if err != nil {
+		log.Printf("Invalid timer arg: %s", arg)
+		o.Notifier.Notify(ctx, "Bobik Error", "Ошибка времени")
+		return
 	}
+
+	duration := time.Duration(seconds) * time.Second
+	o.Timer.Start("Голосовой таймер", duration)
+	
+	o.Memory.Add(rawInput, fmt.Sprintf("Set timer for %d seconds", seconds))
+	o.Notifier.Notify(ctx, "Bobik", fmt.Sprintf("Таймер запущен на %d сек", seconds))
+}
+
+func (o *Orchestrator) handleTimeAction(ctx context.Context, rawInput string) {
+	currentTime := o.Clock.GetCurrentTime()
+	o.Notifier.Notify(ctx, "Bobik Time", currentTime)
+	o.Memory.Add(rawInput, "Reported current time")
 }

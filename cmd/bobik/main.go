@@ -7,8 +7,10 @@ import (
 	"hey-bobik/internal/llm"
 	"hey-bobik/internal/orchestrator"
 	"hey-bobik/internal/stt"
+	"hey-bobik/internal/tools/clock"
 	"hey-bobik/internal/tools/notifier"
 	"hey-bobik/internal/tools/obsidian"
+	"hey-bobik/internal/tools/timer"
 	"log"
 	"os"
 	"os/signal"
@@ -33,6 +35,11 @@ func main() {
 	n := notifier.New()
 	oService := obsidian.New(*vaultPath, *prefix)
 	lClient := llm.New(*ollamaURL, *ollamaModel)
+	
+	cService := clock.New()
+	tService := timer.New(func(name string) {
+		n.Notify(context.Background(), "Бобик", "Время вышло: "+name)
+	})
 
 	// 2. Initialize STT Engine
 	engine, err := stt.NewEngine(*modelPath)
@@ -56,6 +63,8 @@ func main() {
 		Notifier: n,
 		LLM:      lClient,
 		Obsidian: oService,
+		Timer:    tService,
+		Clock:    cService,
 		Memory:   orchestrator.NewContextMemory(10),
 	}
 

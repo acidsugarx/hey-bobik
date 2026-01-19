@@ -3,6 +3,7 @@ package orchestrator
 import (
 	"context"
 	"testing"
+	"time"
 )
 
 type mockRecorder struct {
@@ -59,11 +60,19 @@ func (m *mockObsidian) RewriteLastNote(content string) error {
 	return nil
 }
 
+type mockTimer struct{}
+
+func (m *mockTimer) Start(name string, duration time.Duration) {}
+
+type mockClock struct{}
+
+func (m *mockClock) GetCurrentTime() string { return "12:00" }
+
 func TestOrchestratorFlow(t *testing.T) {
 	rec := &mockRecorder{samples: make([]int16, 10)}
-	stt := &mockSTT{wakeDetected: true, transcription: "сделай заметку тест"}
+	stt := &mockSTT{wakeDetected: true, transcription: "запиши тест"}
 	notif := &mockNotifier{}
-	llm := &mockLLM{response: "тест"}
+	llm := &mockLLM{response: "ACTION: NOTE | ARG: тест"}
 	obs := &mockObsidian{}
 
 	o := &Orchestrator{
@@ -72,13 +81,15 @@ func TestOrchestratorFlow(t *testing.T) {
 		Notifier: notif,
 		LLM:      llm,
 		Obsidian: obs,
+		Timer:    &mockTimer{},
+		Clock:    &mockClock{},
 		Memory:   NewContextMemory(5),
 	}
 
 	audioChan := make(chan []int16, 1)
 	o.handleCommand(context.Background(), audioChan)
 
-	if notif.title != "Bobik" || notif.message != "Note saved to Daily Notes" {
+	if notif.title != "Bobik" || notif.message != "Заметка сохранена" {
 		t.Errorf("expected success notification, got %s: %s", notif.title, notif.message)
 	}
 
@@ -91,7 +102,7 @@ func TestSTTPostProcessing(t *testing.T) {
 	rec := &mockRecorder{samples: make([]int16, 10)}
 	stt := &mockSTT{wakeDetected: true, transcription: "з опиши ка молоко"}
 	notif := &mockNotifier{}
-	llm := &mockLLM{response: "купить молоко"}
+	llm := &mockLLM{response: "ACTION: NOTE | ARG: купить молоко"}
 	obs := &mockObsidian{}
 
 	o := &Orchestrator{
@@ -100,6 +111,8 @@ func TestSTTPostProcessing(t *testing.T) {
 		Notifier: notif,
 		LLM:      llm,
 		Obsidian: obs,
+		Timer:    &mockTimer{},
+		Clock:    &mockClock{},
 		Memory:   NewContextMemory(5),
 	}
 
@@ -115,7 +128,7 @@ func TestOrchestratorUpdateFlow(t *testing.T) {
 	rec := &mockRecorder{samples: make([]int16, 10)}
 	stt := &mockSTT{wakeDetected: true, transcription: "исправь на кефир"}
 	notif := &mockNotifier{}
-	llm := &mockLLM{response: "UPDATE: купить кефир"}
+	llm := &mockLLM{response: "ACTION: NOTE | ARG: UPDATE: купить кефир"}
 	obs := &mockObsidian{}
 
 	o := &Orchestrator{
@@ -124,6 +137,8 @@ func TestOrchestratorUpdateFlow(t *testing.T) {
 		Notifier: notif,
 		LLM:      llm,
 		Obsidian: obs,
+		Timer:    &mockTimer{},
+		Clock:    &mockClock{},
 		Memory:   NewContextMemory(5),
 	}
 
