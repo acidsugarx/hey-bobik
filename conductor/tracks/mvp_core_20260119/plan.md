@@ -3,9 +3,9 @@
 ## Phase 1: Project Scaffolding & Basic Integration
 Initialize the Go project and implement the most basic system integrations (Notifications and File System).
 
-- [ ] Task: Initialize Go module and project structure
-    - [ ] `go mod init hey-bobik`
-    - [ ] Create directory structure: `internal/audio`, `internal/stt`, `internal/llm`, `internal/tools`, `cmd/bobik`
+- [x] Task: Initialize Go module and project structure (2688d91)
+    - [x] `go mod init hey-bobik`
+    - [x] Create directory structure: `internal/audio`, `internal/stt`, `internal/llm`, `internal/tools`, `cmd/bobik`
 - [ ] Task: Implement Notification Tool
     - [ ] Write Tests: Verify `notify-send` command execution
     - [ ] Implement `internal/tools/notifier` package
