@@ -4,5 +4,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [x] **Track: Build the core voice agent infrastructure: Implement 'Эй, Бобик' wake-word detection (Vosk), command capture, LLM orchestration (Ollama), and the Obsidian daily note-taking tool.**
-  *Link: [./tracks/mvp_core_20260119/](./tracks/mvp_core_20260119/)*
+- [ ] **Track: Intelligence Boost: Qwen 3 Integration, STT Post-processing, Dynamic Grammar & Context Memory**
+  *Link: [./tracks/intel_boost_20260119/](./tracks/intel_boost_20260119/)*
+
