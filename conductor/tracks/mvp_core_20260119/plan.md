@@ -6,9 +6,9 @@ Initialize the Go project and implement the most basic system integrations (Noti
 - [x] Task: Initialize Go module and project structure (2688d91)
     - [x] `go mod init hey-bobik`
     - [x] Create directory structure: `internal/audio`, `internal/stt`, `internal/llm`, `internal/tools`, `cmd/bobik`
-- [ ] Task: Implement Notification Tool
-    - [ ] Write Tests: Verify `notify-send` command execution
-    - [ ] Implement `internal/tools/notifier` package
+- [x] Task: Implement Notification Tool (3dd0647)
+    - [x] Write Tests: Verify `notify-send` command execution
+    - [x] Implement `internal/tools/notifier` package
 - [ ] Task: Implement Obsidian Note Tool (Daily Notes)
     - [ ] Write Tests: Verify daily file creation and appending with YAML frontmatter
     - [ ] Implement `internal/tools/obsidian` package
