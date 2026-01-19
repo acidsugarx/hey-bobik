@@ -4,7 +4,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [x] **Track: Expand Capabilities: Implement Timer and Current Time info tools with LLM-based routing.**
-  *Link: [./tracks/caps_timer_time_20260119/](./tracks/caps_timer_time_20260119/)*
+- [ ] **Track: Visual Status Indicator: Implement a system tray icon that reflects Bobik's current state (Idle, Listening, Thinking).**
+  *Link: [./tracks/tray_indicator_20260119/](./tracks/tray_indicator_20260119/)*
+
 
 
