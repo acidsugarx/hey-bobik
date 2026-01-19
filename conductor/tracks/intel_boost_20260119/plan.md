@@ -3,9 +3,9 @@
 ## Phase 1: Model & Infrastructure
 Upgrade to Qwen 3 and update the LLM client configuration.
 
-- [ ] Task: Update Tech Stack & Configuration
-    - [ ] Update `conductor/tech-stack.md` to Qwen 3
-    - [ ] Update `cmd/bobik/main.go` default flags
+- [x] Task: Update Tech Stack & Configuration (6fb52cc)
+    - [x] Update `conductor/tech-stack.md` to Qwen 3
+    - [x] Update `cmd/bobik/main.go` default flags
 - [ ] Task: Implement Context Memory
     - [ ] Write Tests: Verify ring buffer for context storage
     - [ ] Implement `internal/orchestrator/context.go`
