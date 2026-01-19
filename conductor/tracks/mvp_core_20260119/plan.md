@@ -14,7 +14,7 @@ Initialize the Go project and implement the most basic system integrations (Noti
     - [x] Implement `internal/tools/obsidian` package
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
-## Phase 2: Audio & Wake Word (The Ear)
+## Phase 2: Audio & Wake Word (The Ear) [checkpoint: 0c2e83b]
 Implement microphone capture and the Vosk-based wake word detection loop.
 
 - [x] Task: Implement Audio Capture (5037b2e)
