@@ -126,6 +126,19 @@ Bobik is a local, privacy-focused voice assistant for Linux, designed to help us
 - **Sensitivity Control:** Configurable wake word sensitivity to minimize false positives in different environments.
 
 ## Success Criteria
+
 - Reliable wake word detection with minimal false activations.
+
 - Fast transition from wake word detection to command capture.
+
 - Successful creation of notes in the specified local directory with correct formatting.
+
+
+
+## Future Roadmap
+
+- **Contextual Editing:** Allow the agent to modify any specific note in the current daily file, not just the last one, by identifying it via content or keywords.
+
+- **Multimodal Interactions:** Support for image descriptions or system state analysis (e.g., "What's on my screen?").
+
+- **External API Integrations:** Ability to send notes to other services (Slack, Telegram, etc.) via voice.

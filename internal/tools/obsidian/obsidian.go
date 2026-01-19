@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -53,4 +54,38 @@ func (s *Service) AppendToDailyNote(content string) error {
 	}
 
 	return nil
+}
+
+// RewriteLastNote replaces the last entry in the daily note with new content.
+func (s *Service) RewriteLastNote(content string) error {
+	now := s.Now()
+	fileName := fmt.Sprintf("%s%s.md", s.Prefix, now.Format("2006-01-02"))
+	filePath := filepath.Join(s.VaultPath, fileName)
+
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return s.AppendToDailyNote(content)
+	}
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to read daily note: %w", err)
+	}
+
+	lines := strings.Split(string(data), "\n")
+	lastHeaderIdx := -1
+	for i := len(lines) - 1; i >= 0; i-- {
+		if strings.HasPrefix(lines[i], "## ") {
+			lastHeaderIdx = i
+			break
+		}
+	}
+
+	if lastHeaderIdx == -1 {
+		return s.AppendToDailyNote(content) // Fallback to append if no header found
+	}
+
+	// Keep everything up to the last header, then write the new entry
+	newLines := append(lines[:lastHeaderIdx], fmt.Sprintf("## %s\n%s\n", now.Format("15:04:05"), content))
+	return os.WriteFile(filePath, []byte(strings.Join(newLines, "\n")),
+		0644)
 }

@@ -16,6 +16,7 @@ type Engine struct {
 
 // NewEngine creates a new Vosk engine.
 func NewEngine(modelPath string) (*Engine, error) {
+	vosk.SetLogLevel(-1)
 	model, err := vosk.NewModel(modelPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load vosk model: %w", err)

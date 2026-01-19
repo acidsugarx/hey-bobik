@@ -33,6 +33,7 @@ type LLMClient interface {
 // ObsidianService defines the interface for note-taking.
 type ObsidianService interface {
 	AppendToDailyNote(content string) error
+	RewriteLastNote(content string) error
 }
 
 // Orchestrator coordinates the audio capture, STT, and tool execution.
@@ -45,224 +46,153 @@ type Orchestrator struct {
 	Memory   *ContextMemory
 }
 
-const systemPrompt = `Ты — Бобик, интеллектуальный голосовой помощник для Linux. 
+const systemPrompt = `Ты — Бобик. Твоя задача: вернуть очищенный текст заметки без лишних слов.
+НЕ используй жирный шрифт. НЕ пиши слова "Суть", "Текст", "Исправлено". 
+Если пользователь просит "исправить" или "изменить" последнюю запись, ОБЯЗАТЕЛЬНО начни ответ с "UPDATE:".
+В остальных случаях пиши ТОЛЬКО текст.
 
-Твоя задача состоит из двух этапов:
-1. **Очистка (Refinement):** Исправь ошибки распознавания речи (STT) в полученном тексте. Учти контекст предыдущих команд, если они есть. Исправь грамматику, падежи и опечатки, сохраняя смысл.
-2. **Извлечение (Extraction):** Выдели суть команды для записи в заметку. Удали вводные слова ("запиши", "сделай заметку", "эй бобик"). 
+Примеры:
+Ввод: "запиши купить хлеб"
+Ответ: Купить хлеб
 
-Верни ТОЛЬКО очищенный текст заметки. Не пиши "Вот ваша заметка" или "Исправленный текст:". Только содержание.
+Ввод: "исправь на батон"
+Ответ: UPDATE: Купить батон
 
-Контекст последних действий:
+Ввод: "запиши напомни позвонить маме вечером"
+Ответ: Позвонить маме вечером
+
+Контекст:
 {{.Context}}
 
-Текст от пользователя:
-{{.Input}}`
+Ввод: {{.Input}}
+Ответ:`
 
 const (
-
 	wakeWordGrammar = `["эй бобик", "бобик", "запиши", "сделай", "напомни", "поставь", "[unk]"]`
-
 	wakeWord        = "эй бобик"
-
 )
 
-
-
 // Start begins the main wake word detection loop.
-
 func (o *Orchestrator) Start(ctx context.Context) error {
-
 	log.Println("Bobik is listening for 'Эй, Бобик'...")
 
-
-
-	for {
-
-		select {
-
-		case <-ctx.Done():
-
-			return ctx.Err()
-
-		default:
-
-			if err := o.runOnce(ctx); err != nil {
-
-				log.Printf("error in orchestrator loop: %v", err)
-
-			}
-
-		}
-
-	}
-
-}
-
-
-
-func (o *Orchestrator) runOnce(ctx context.Context) error {
-
+	// Global audio channel to keep the stream drained and avoid ALSA XRUNs
 	audioChan := make(chan []int16, 100)
 
-	
-
-	// Create a sub-context that we can cancel to stop the recorder goroutine
-
-	recCtx, cancelRec := context.WithCancel(ctx)
-
-	defer cancelRec()
-
-
-
+	// Single persistent recorder goroutine
 	go func() {
-
-		defer close(audioChan)
-
 		for {
-
 			select {
-
-			case <-recCtx.Done():
-
+			case <-ctx.Done():
+				close(audioChan)
 				return
-
 			default:
-
 				samples, err := o.Recorder.Read()
-
 				if err != nil {
-
-					return
-
+					continue
 				}
+				// Copy the buffer to avoid data corruption
+			samplesCopy := make([]int16, len(samples))
+			copy(samplesCopy, samples)
 
-				// Copy the buffer to avoid data corruption by the next Read()
-
-				samplesCopy := make([]int16, len(samples))
-
-				copy(samplesCopy, samples)
-
-				audioChan <- samplesCopy
-
+				// Non-blocking send to avoid blocking the recorder if the consumer is slow
+				select {
+				case audioChan <- samplesCopy:
+				default:
+					// Drop samples if buffer is full (overflow)
+				}
 			}
-
 		}
-
 	}()
 
-
-
-	// 1. Listen for Wake Word with prioritized grammar
-
-	detected, err := o.STT.ListenForWakeWord(audioChan, wakeWordGrammar, wakeWord)
-
-
-	if err != nil {
-		return err
-	}
-
-	if detected {
-		log.Println("Wake word detected!")
-		o.Notifier.Notify(ctx, "Bobik", "Listening...")
-
-		// 2. Transcribe Command
-		// We stop the wake word detection and start transcription on the remaining/incoming audio
-		// In a simplified MVP, we use the same audioChan but Vosk recognizers will be swapped
-		text, err := o.STT.Transcribe(audioChan)
-		if err != nil {
-			return err
-		}
-		log.Printf("Transcribed: %s", text)
-
-		if text == "" {
-			return nil
-		}
-
-				// 3. Process with LLM
-
-				history := o.Memory.GetHistory()
-
-				var contextStr strings.Builder
-
-				for _, entry := range history {
-
-					contextStr.WriteString(fmt.Sprintf("- Команда: %s, Действие: %s\n", entry.Command, entry.Action))
-
-				}
-
-		
-
-				tmpl, err := template.New("prompt").Parse(systemPrompt)
-
-				if err != nil {
-
-					return fmt.Errorf("failed to parse prompt template: %w", err)
-
-				}
-
-		
-
-				var promptBuf bytes.Buffer
-
-				err = tmpl.Execute(&promptBuf, map[string]string{
-
-					"Context": contextStr.String(),
-
-					"Input":   text,
-
-				})
-
-				if err != nil {
-
-					return fmt.Errorf("failed to execute prompt template: %w", err)
-
-				}
-
-		
-
-				noteContent, err := o.LLM.Generate(ctx, "", promptBuf.String())
-
-				if err != nil {
-
-					o.Notifier.Notify(ctx, "Bobik Error", "LLM failed")
-
-					return err
-
-				}
-
-				log.Printf("Note content: %s", noteContent)
-
-		
-
-				// 4. Save to Obsidian
-
-				err = o.Obsidian.AppendToDailyNote(noteContent)
-
-				if err != nil {
-
-					o.Notifier.Notify(ctx, "Bobik Error", "Failed to save note")
-
-					return err
-
-				}
-
-		
-
-				// 5. Update Memory
-
-				o.Memory.Add(text, "Saved note: "+noteContent)
-
-		
-
-				o.Notifier.Notify(ctx, "Bobik", "Note saved to Daily Notes")
-
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			// 1. Listen for Wake Word
+			detected, err := o.STT.ListenForWakeWord(audioChan, wakeWordGrammar, wakeWord)
+			if err != nil {
+				log.Printf("wake word error: %v", err)
+				continue
 			}
 
-		
-
-			return nil
-
+			if detected {
+				o.handleCommand(ctx, audioChan)
+			}
 		}
+	}
+}
 
-		
+func (o *Orchestrator) handleCommand(ctx context.Context, audioChan <-chan []int16) {
+	log.Println("Wake word detected!")
+	o.Notifier.Notify(ctx, "Bobik", "Listening...")
+
+	// 2. Transcribe Command
+	text, err := o.STT.Transcribe(audioChan)
+	if err != nil {
+		log.Printf("transcription error: %v", err)
+		return
+	}
+	text = strings.TrimSpace(text)
+	log.Printf("Transcribed: %s", text)
+
+	if text == "" {
+		return
+	}
+
+	// 3. Process with LLM
+	history := o.Memory.GetHistory()
+	var contextStr strings.Builder
+	for _, entry := range history {
+		contextStr.WriteString(fmt.Sprintf("- Команда: %s, Действие: %s\n", entry.Command, entry.Action))
+	}
+
+	tmpl, _ := template.New("prompt").Parse(systemPrompt)
+	var promptBuf bytes.Buffer
+	tmpl.Execute(&promptBuf, map[string]string{
+		"Context": contextStr.String(),
+		"Input":   text,
+	})
+
+	noteContent, err := o.LLM.Generate(ctx, "", promptBuf.String())
+	if err != nil {
+		o.Notifier.Notify(ctx, "Bobik Error", "LLM failed")
+		return
+	}
+	log.Printf("LLM Raw output: %s", noteContent)
+
+	// 4. Determine Action and Save
+	isUpdate := false
+	if strings.HasPrefix(noteContent, "UPDATE:") {
+		isUpdate = true
+		noteContent = strings.TrimPrefix(noteContent, "UPDATE:")
+		noteContent = strings.TrimSpace(noteContent)
+	}
+
+	if isUpdate {
+		err = o.Obsidian.RewriteLastNote(noteContent)
+	} else {
+		err = o.Obsidian.AppendToDailyNote(noteContent)
+	}
+
+	if err != nil {
+		log.Printf("Save error: %v", err)
+		o.Notifier.Notify(ctx, "Bobik Error", "Failed to save note")
+		return
+	}
+
+	// 5. Update Memory
+	action := "Saved note"
+	if isUpdate {
+		action = "Updated last note"
+	}
+	o.Memory.Add(text, fmt.Sprintf("%s: %s", action, noteContent))
+
+	o.Notifier.Notify(ctx, "Bobik", "Note saved to Daily Notes")
+
+	// Drain any leftover audio from the channel to avoid "ghost" commands
+	for len(audioChan) > 0 {
+		<-audioChan
+	}
+}

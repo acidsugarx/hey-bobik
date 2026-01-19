@@ -54,6 +54,11 @@ func (m *mockObsidian) AppendToDailyNote(content string) error {
 	return nil
 }
 
+func (m *mockObsidian) RewriteLastNote(content string) error {
+	m.content = "REWRITTEN: " + content
+	return nil
+}
+
 func TestOrchestratorFlow(t *testing.T) {
 	rec := &mockRecorder{samples: make([]int16, 10)}
 	stt := &mockSTT{wakeDetected: true, transcription: "сделай заметку тест"}
@@ -70,10 +75,8 @@ func TestOrchestratorFlow(t *testing.T) {
 		Memory:   NewContextMemory(5),
 	}
 
-	err := o.runOnce(context.Background())
-	if err != nil {
-		t.Fatalf("runOnce failed: %v", err)
-	}
+	audioChan := make(chan []int16, 1)
+	o.handleCommand(context.Background(), audioChan)
 
 	if notif.title != "Bobik" || notif.message != "Note saved to Daily Notes" {
 		t.Errorf("expected success notification, got %s: %s", notif.title, notif.message)
@@ -81,5 +84,53 @@ func TestOrchestratorFlow(t *testing.T) {
 
 	if obs.content != "тест" {
 		t.Errorf("expected 'тест' in Obsidian, got %s", obs.content)
+	}
+}
+
+func TestSTTPostProcessing(t *testing.T) {
+	rec := &mockRecorder{samples: make([]int16, 10)}
+	stt := &mockSTT{wakeDetected: true, transcription: "з опиши ка молоко"}
+	notif := &mockNotifier{}
+	llm := &mockLLM{response: "купить молоко"}
+	obs := &mockObsidian{}
+
+	o := &Orchestrator{
+		Recorder: rec,
+		STT:      stt,
+		Notifier: notif,
+		LLM:      llm,
+		Obsidian: obs,
+		Memory:   NewContextMemory(5),
+	}
+
+	audioChan := make(chan []int16, 1)
+	o.handleCommand(context.Background(), audioChan)
+
+	if obs.content != "купить молоко" {
+		t.Errorf("expected 'купить молоко', got %s", obs.content)
+	}
+}
+
+func TestOrchestratorUpdateFlow(t *testing.T) {
+	rec := &mockRecorder{samples: make([]int16, 10)}
+	stt := &mockSTT{wakeDetected: true, transcription: "исправь на кефир"}
+	notif := &mockNotifier{}
+	llm := &mockLLM{response: "UPDATE: купить кефир"}
+	obs := &mockObsidian{}
+
+	o := &Orchestrator{
+		Recorder: rec,
+		STT:      stt,
+		Notifier: notif,
+		LLM:      llm,
+		Obsidian: obs,
+		Memory:   NewContextMemory(5),
+	}
+
+	audioChan := make(chan []int16, 1)
+	o.handleCommand(context.Background(), audioChan)
+
+	if obs.content != "REWRITTEN: купить кефир" {
+		t.Errorf("expected 'REWRITTEN: купить кефир', got %s", obs.content)
 	}
 }
