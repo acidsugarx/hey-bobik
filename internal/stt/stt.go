@@ -3,6 +3,8 @@ package stt
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	vosk "github.com/alphacep/vosk-api/go"
 )
 
@@ -64,7 +66,7 @@ func (e *Engine) ListenForWakeWord(audioChan <-chan []int16, grammar string, wak
 	return false, nil
 }
 
-// Transcribe records audio until silence and returns the text.
+// Transcribe records audio for a short duration and returns the combined text.
 func (e *Engine) Transcribe(audioChan <-chan []int16) (string, error) {
 	rec, err := vosk.NewRecognizer(e.model, 16000.0)
 	if err != nil {
@@ -73,27 +75,44 @@ func (e *Engine) Transcribe(audioChan <-chan []int16) (string, error) {
 	defer rec.Free()
 
 	var fullText string
-	for samples := range audioChan {
-		byteBuf := make([]byte, len(samples)*2)
-		for i, s := range samples {
-			byteBuf[i*2] = byte(s & 0xff)
-			byteBuf[i*2+1] = byte(s >> 8)
-		}
+	// Listen for a max of 7 seconds or until we get some results
+	timeout := time.After(7 * time.Second)
 
-		if rec.AcceptWaveform(byteBuf) != 0 {
+	for {
+		select {
+		case <-timeout:
+			// Final results from recognizer
 			var res RecognitionResult
-			if err := json.Unmarshal([]byte(rec.Result()), &res); err != nil {
-				continue
+			if err := json.Unmarshal([]byte(rec.FinalResult()), &res); err == nil {
+				if res.Text != "" {
+					fullText += res.Text
+				}
 			}
-			if res.Text != "" {
-				fullText += res.Text + " "
+			return fullText, nil
+		case samples, ok := <-audioChan:
+			if !ok {
+				return fullText, nil
 			}
-			// In a real implementation, we would detect silence to stop.
-			// For this MVP, we might stop after the first result or use a timeout.
-			return fullText, nil 
+			byteBuf := make([]byte, len(samples)*2)
+			for i, s := range samples {
+				byteBuf[i*2] = byte(s & 0xff)
+				byteBuf[i*2+1] = byte(s >> 8)
+			}
+
+			if rec.AcceptWaveform(byteBuf) != 0 {
+				var res RecognitionResult
+				if err := json.Unmarshal([]byte(rec.Result()), &res); err != nil {
+					continue
+				}
+				if res.Text != "" {
+					fullText += res.Text + " "
+				}
+				// If we have some text, we can wait a bit more for the rest or return 
+				// if we think the user is done. For MVP, we'll continue until timeout 
+				// or a significant result.
+			}
 		}
 	}
-	return fullText, nil
 }
 
 // Close releases Vosk resources.

@@ -74,14 +74,16 @@ func (o *Orchestrator) runOnce(ctx context.Context) error {
 			select {
 			case <-recCtx.Done():
 				return
-			default:
-				samples, err := o.Recorder.Read()
-				if err != nil {
-					return
-				}
-				audioChan <- samples
-			}
-		}
+								default:
+									samples, err := o.Recorder.Read()
+									if err != nil {
+										return
+									}
+									// Copy the buffer to avoid data corruption by the next Read()
+									samplesCopy := make([]int16, len(samples))
+									copy(samplesCopy, samples)
+									audioChan <- samplesCopy
+								}		}
 	}()
 
 	// 1. Listen for Wake Word
