@@ -9,9 +9,9 @@ Initialize the Go project and implement the most basic system integrations (Noti
 - [x] Task: Implement Notification Tool (3dd0647)
     - [x] Write Tests: Verify `notify-send` command execution
     - [x] Implement `internal/tools/notifier` package
-- [ ] Task: Implement Obsidian Note Tool (Daily Notes)
-    - [ ] Write Tests: Verify daily file creation and appending with YAML frontmatter
-    - [ ] Implement `internal/tools/obsidian` package
+- [x] Task: Implement Obsidian Note Tool (Daily Notes) (1d65e19)
+    - [x] Write Tests: Verify daily file creation and appending with YAML frontmatter
+    - [x] Implement `internal/tools/obsidian` package
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
 ## Phase 2: Audio & Wake Word (The Ear)
