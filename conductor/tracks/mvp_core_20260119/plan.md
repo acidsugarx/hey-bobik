@@ -17,9 +17,9 @@ Initialize the Go project and implement the most basic system integrations (Noti
 ## Phase 2: Audio & Wake Word (The Ear)
 Implement microphone capture and the Vosk-based wake word detection loop.
 
-- [ ] Task: Implement Audio Capture
-    - [ ] Write Tests: Mock PortAudio stream and verify data capture
-    - [ ] Implement `internal/audio` package
+- [x] Task: Implement Audio Capture (5037b2e)
+    - [x] Write Tests: Mock PortAudio stream and verify data capture
+    - [x] Implement `internal/audio` package
 - [ ] Task: Implement Wake Word Detection (Vosk)
     - [ ] Write Tests: Verify phrase recognition using a sample audio buffer
     - [ ] Implement `internal/stt` package with Vosk integration
