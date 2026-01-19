@@ -4,6 +4,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [x] **Track: Intelligence Boost: Qwen 3 Integration, STT Post-processing, Dynamic Grammar & Context Memory**
-  *Link: [./tracks/intel_boost_20260119/](./tracks/intel_boost_20260119/)*
+- [ ] **Track: Expand Capabilities: Implement Timer and Current Time info tools with LLM-based routing.**
+  *Link: [./tracks/caps_timer_time_20260119/](./tracks/caps_timer_time_20260119/)*
+
 
