@@ -30,9 +30,9 @@ Implement microphone capture and the Vosk-based wake word detection loop.
 ## Phase 3: Brain & Orchestration
 Connect the transcription to Ollama and orchestrate the full flow.
 
-- [ ] Task: Implement Ollama Client
-    - [ ] Write Tests: Mock Ollama API response
-    - [ ] Implement `internal/llm` package (HTTP client)
+- [x] Task: Implement Ollama Client (1cd5685)
+    - [x] Write Tests: Mock Ollama API response
+    - [x] Implement `internal/llm` package (HTTP client)
 - [ ] Task: Implement Orchestrator Logic
     - [ ] Write Tests: Verify flow from "Wake" -> "Record" -> "Transcribe" -> "Process" -> "Note"
     - [ ] Implement main orchestrator in `internal/orchestrator`
