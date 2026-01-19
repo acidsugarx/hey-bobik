@@ -6,9 +6,9 @@ Upgrade to Qwen 3 and update the LLM client configuration.
 - [x] Task: Update Tech Stack & Configuration (6fb52cc)
     - [x] Update `conductor/tech-stack.md` to Qwen 3
     - [x] Update `cmd/bobik/main.go` default flags
-- [ ] Task: Implement Context Memory
-    - [ ] Write Tests: Verify ring buffer for context storage
-    - [ ] Implement `internal/orchestrator/context.go`
+- [x] Task: Implement Context Memory (5045106)
+    - [x] Write Tests: Verify ring buffer for context storage
+    - [x] Implement `internal/orchestrator/context.go`
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
 ## Phase 2: Intelligence & Logic
