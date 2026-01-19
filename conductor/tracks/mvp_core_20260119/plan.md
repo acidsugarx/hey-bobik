@@ -36,6 +36,6 @@ Connect the transcription to Ollama and orchestrate the full flow.
 - [x] Task: Implement Orchestrator Logic (230614b)
     - [x] Write Tests: Verify flow from "Wake" -> "Record" -> "Transcribe" -> "Process" -> "Note"
     - [x] Implement main orchestrator in `internal/orchestrator`
-- [ ] Task: Create Main Entry Point
-    - [ ] Implement `cmd/bobik/main.go` to wire all components
+- [x] Task: Create Main Entry Point (5e3019e)
+    - [x] Implement `cmd/bobik/main.go` to wire all components
 - [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
