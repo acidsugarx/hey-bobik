@@ -14,7 +14,7 @@ type Engine struct {
 
 // NewEngine creates a new Vosk engine.
 func NewEngine(modelPath string) (*Engine, error) {
-	model, err := vosk.NewVoskModel(modelPath)
+	model, err := vosk.NewModel(modelPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load vosk model: %w", err)
 	}
@@ -37,7 +37,7 @@ type PartialResult struct {
 // ListenForWakeWord listens to an audio stream and returns true when the wake word is detected.
 // grammar is a JSON string of allowed words, e.g., `["эй бобик", "бобик", "[unk]"]`
 func (e *Engine) ListenForWakeWord(audioChan <-chan []int16, grammar string, wakeWord string) (bool, error) {
-	rec, err := vosk.NewVoskRecognizerGrm(e.model, 16000.0, grammar)
+	rec, err := vosk.NewRecognizerGrm(e.model, 16000.0, grammar)
 	if err != nil {
 		return false, fmt.Errorf("failed to create recognizer: %w", err)
 	}
@@ -66,7 +66,7 @@ func (e *Engine) ListenForWakeWord(audioChan <-chan []int16, grammar string, wak
 
 // Transcribe records audio until silence and returns the text.
 func (e *Engine) Transcribe(audioChan <-chan []int16) (string, error) {
-	rec, err := vosk.NewVoskRecognizer(e.model, 16000.0)
+	rec, err := vosk.NewRecognizer(e.model, 16000.0)
 	if err != nil {
 		return "", fmt.Errorf("failed to create recognizer: %w", err)
 	}
