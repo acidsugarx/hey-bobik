@@ -23,7 +23,7 @@ func main() {
 	vaultPath := flag.String("vault", filepath.Join(home, "SECOND_BRAIN", "SECOND_BRAIN"), "Path to Obsidian vault")
 	prefix := flag.String("prefix", "", "Prefix for daily note filenames")
 	ollamaURL := flag.String("ollama", "http://localhost:11434", "Ollama API URL")
-	ollamaModel := flag.String("llm", "llama3.1:8b", "Ollama model name")
+	ollamaModel := flag.String("llm", "qwen3:8b", "Ollama model name")
 	
 	flag.Parse()
 

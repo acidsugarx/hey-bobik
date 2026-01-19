@@ -12,9 +12,9 @@
 
 ## Large Language Model (The Brain)
 - **Backend:** [Ollama](https://ollama.com/)
-- **Models:** `llama3.1:8b` (Default) or `mistral-nemo:12b`
+- **Models:** `qwen3:8b` (Latest stable)
 - **Interface:** REST API via `net/http`
-- **Reason:** Ollama simplifies local model management and inference, specifically optimized for NVIDIA GPUs (RTX 4060).
+- **Reason:** Qwen 3 provides superior Russian language understanding and instruction following compared to Llama 3.1, specifically optimized for tasks requiring high grammatical accuracy.
 
 ## System Integration (The Hands)
 - **Notifications:** `notify-send` (via `os/exec`)
