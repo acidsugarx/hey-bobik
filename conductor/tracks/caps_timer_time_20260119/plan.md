@@ -3,9 +3,9 @@
 ## Phase 1: New Tools
 Implement the standalone timer and time reporting logic.
 
-- [ ] Task: Implement Timer Tool
-    - [ ] Write Tests: Verify timer firing after delay
-    - [ ] Implement `internal/tools/timer` package
+- [x] Task: Implement Timer Tool (621dc61)
+    - [x] Write Tests: Verify timer firing after delay
+    - [x] Implement `internal/tools/timer` package
 - [ ] Task: Implement Time Reporting Tool
     - [ ] Write Tests: Verify time formatting
     - [ ] Implement `internal/tools/clock` package
