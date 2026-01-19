@@ -1,6 +1,6 @@
 # Implementation Plan: Intelligence Boost
 
-## Phase 1: Model & Infrastructure
+## Phase 1: Model & Infrastructure [checkpoint: 333551c]
 Upgrade to Qwen 3 and update the LLM client configuration.
 
 - [x] Task: Update Tech Stack & Configuration (6fb52cc)
