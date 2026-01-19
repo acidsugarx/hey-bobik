@@ -23,8 +23,8 @@ Implement microphone capture and the Vosk-based wake word detection loop.
 - [x] Task: Implement Wake Word Detection (Vosk) (ea709e0)
     - [x] Write Tests: Verify phrase recognition using a sample audio buffer
     - [x] Implement `internal/stt` package with Vosk integration
-- [ ] Task: Implement Wake Word Loop
-    - [ ] Integrate audio capture and Vosk into a continuous loop
+- [x] Task: Implement Wake Word Loop (d3688b5)
+    - [x] Integrate audio capture and Vosk into a continuous loop
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
 
 ## Phase 3: Brain & Orchestration
