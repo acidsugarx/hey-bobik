@@ -14,9 +14,9 @@ Implement the standalone timer and time reporting logic.
 ## Phase 2: Orchestration & Routing
 Update the orchestrator to handle multiple tools.
 
-- [ ] Task: Update System Prompt for Tool Routing
-    - [ ] Refine Qwen 3 prompt to support `ACTION` and `ARG` format
-- [ ] Task: Update Orchestrator Logic
-    - [ ] Write Tests: Verify routing between NOTE, TIMER, and TIME
-    - [ ] Implement tool dispatcher in `internal/orchestrator`
+- [x] Task: Update System Prompt for Tool Routing (3eb05d3)
+    - [x] Refine Qwen 3 prompt to support `ACTION` and `ARG` format
+- [x] Task: Update Orchestrator Logic (3eb05d3)
+    - [x] Write Tests: Verify routing between NOTE, TIMER, and TIME
+    - [x] Implement tool dispatcher in `internal/orchestrator`
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
