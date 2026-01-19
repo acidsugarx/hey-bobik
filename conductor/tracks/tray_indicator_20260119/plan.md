@@ -17,6 +17,6 @@ Connect the orchestrator states to the tray icon.
 - [x] Task: Implement State Notification (ca8466e)
     - [x] Define `State` type and a channel/callback for updates
     - [x] Update orchestrator to emit state changes (Idle -> Listening -> Thinking -> Idle)
-- [ ] Task: Update Tray Visuals
-    - [ ] Implement icon switching logic in `internal/ui/tray`
+- [x] Task: Update Tray Visuals (0556e04)
+    - [x] Implement icon switching logic in `internal/ui/tray`
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
