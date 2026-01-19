@@ -14,9 +14,9 @@ Integrate the tray library and set up the main thread loop.
 ## Phase 2: State Integration
 Connect the orchestrator states to the tray icon.
 
-- [ ] Task: Implement State Notification
-    - [ ] Define `State` type and a channel/callback for updates
-    - [ ] Update orchestrator to emit state changes (Idle -> Listening -> Thinking -> Idle)
+- [x] Task: Implement State Notification (ca8466e)
+    - [x] Define `State` type and a channel/callback for updates
+    - [x] Update orchestrator to emit state changes (Idle -> Listening -> Thinking -> Idle)
 - [ ] Task: Update Tray Visuals
     - [ ] Implement icon switching logic in `internal/ui/tray`
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
