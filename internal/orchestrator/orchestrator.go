@@ -48,16 +48,26 @@ type ClockService interface {
 	GetCurrentTime() string
 }
 
+// State represents the current internal state of the orchestrator.
+type State int
+
+const (
+	StateIdle State = iota
+	StateListening
+	StateThinking
+)
+
 // Orchestrator coordinates the audio capture, STT, and tool execution.
 type Orchestrator struct {
-	Recorder Recorder
-	STT      STTEngine
-	Notifier Notifier
-	LLM      LLMClient
-	Obsidian ObsidianService
-	Timer    TimerService
-	Clock    ClockService
-	Memory   *ContextMemory
+	Recorder      Recorder
+	STT           STTEngine
+	Notifier      Notifier
+	LLM           LLMClient
+	Obsidian      ObsidianService
+	Timer         TimerService
+	Clock         ClockService
+	Memory        *ContextMemory
+	OnStateChange func(State)
 }
 
 const systemPrompt = `Ты — Бобик, интеллектуальный помощник для Linux. 
@@ -104,6 +114,10 @@ const (
 func (o *Orchestrator) Start(ctx context.Context) error {
 	log.Println("Bobik is listening for 'Эй, Бобик'...")
 
+	if o.OnStateChange != nil {
+		o.OnStateChange(StateIdle)
+	}
+
 	// Global audio channel to keep the stream drained and avoid ALSA XRUNs
 	audioChan := make(chan []int16, 100)
 
@@ -147,6 +161,9 @@ func (o *Orchestrator) Start(ctx context.Context) error {
 
 			if detected {
 				o.handleCommand(ctx, audioChan)
+				if o.OnStateChange != nil {
+					o.OnStateChange(StateIdle)
+				}
 			}
 		}
 	}
@@ -154,6 +171,9 @@ func (o *Orchestrator) Start(ctx context.Context) error {
 
 func (o *Orchestrator) handleCommand(ctx context.Context, audioChan <-chan []int16) {
 	log.Println("Wake word detected!")
+	if o.OnStateChange != nil {
+		o.OnStateChange(StateListening)
+	}
 	o.Notifier.Notify(ctx, "Bobik", "Listening...")
 
 	// 2. Transcribe Command
@@ -167,6 +187,10 @@ func (o *Orchestrator) handleCommand(ctx context.Context, audioChan <-chan []int
 
 	if text == "" {
 		return
+	}
+
+	if o.OnStateChange != nil {
+		o.OnStateChange(StateThinking)
 	}
 
 	// 3. Process with LLM
@@ -277,7 +301,7 @@ func (o *Orchestrator) handleTimerAction(ctx context.Context, rawInput, arg stri
 	duration := time.Duration(seconds) * time.Second
 	o.Timer.Start("Голосовой таймер", duration)
 	
-	o.Memory.Add(rawInput, fmt.Sprintf("Set timer for %d seconds", seconds))
+o.Memory.Add(rawInput, fmt.Sprintf("Set timer for %d seconds", seconds))
 	o.Notifier.Notify(ctx, "Bobik", fmt.Sprintf("Таймер запущен на %d сек", seconds))
 }
 

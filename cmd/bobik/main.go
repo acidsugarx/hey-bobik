@@ -61,6 +61,12 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// 5. Initialize Tray UI
+	trayManager := tray.New(func() {
+		log.Println("Tray exited, shutting down...")
+		cancel()
+	})
+
 	// 4. Initialize Orchestrator
 	o := &orchestrator.Orchestrator{
 		Recorder: recorder,
@@ -71,13 +77,17 @@ func main() {
 		Timer:    tService,
 		Clock:    cService,
 		Memory:   orchestrator.NewContextMemory(10),
+		OnStateChange: func(s orchestrator.State) {
+			switch s {
+			case orchestrator.StateIdle:
+				trayManager.SetState(tray.StateIdle)
+			case orchestrator.StateListening:
+				trayManager.SetState(tray.StateListening)
+			case orchestrator.StateThinking:
+				trayManager.SetState(tray.StateThinking)
+			}
+		},
 	}
-
-	// 5. Initialize Tray UI
-	trayManager := tray.New(func() {
-		log.Println("Tray exited, shutting down...")
-		cancel()
-	})
 
 	// Start Orchestrator in a goroutine
 	go func() {
