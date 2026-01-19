@@ -6,7 +6,7 @@
 - **Reason:** Superior concurrency support for handling multiple audio/processing streams and low-overhead as a system daemon.
 
 ## Audio Processing (The Ear)
-- **Audio Capture:** [PortAudio](http://www.portaudio.com/) (Go bindings: `gopkg.in/hraban/portaudio.v1`)
+- **Audio Capture:** [PortAudio](http://www.portaudio.com/) (Go bindings: `github.com/gordonklaus/portaudio`)
 - **Wake Word & STT:** [Vosk](https://alphacephei.com/vosk/) (Go bindings: `github.com/alphacep/vosk-api/go`)
 - **Reason:** PortAudio provides stable microphone access. Vosk allows for efficient, offline, grammar-based recognition which is critical for a high-accuracy, low-CPU wake word engine.
 
