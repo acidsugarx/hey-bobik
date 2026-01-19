@@ -39,6 +39,10 @@ type PartialResult struct {
 // ListenForWakeWord listens to an audio stream and returns true when the wake word is detected.
 // grammar is a JSON string of allowed words, e.g., `["эй бобик", "бобик", "[unk]"]`
 func (e *Engine) ListenForWakeWord(audioChan <-chan []int16, grammar string, wakeWord string) (bool, error) {
+	// If grammar is empty, use a very broad one or a default
+	if grammar == "" {
+		grammar = `["эй бобик", "[unk]"]`
+	}
 	rec, err := vosk.NewRecognizerGrm(e.model, 16000.0, grammar)
 	if err != nil {
 		return false, fmt.Errorf("failed to create recognizer: %w", err)

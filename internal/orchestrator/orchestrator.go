@@ -59,49 +59,105 @@ const systemPrompt = `Ты — Бобик, интеллектуальный го
 Текст от пользователя:
 {{.Input}}`
 
+const (
+
+	wakeWordGrammar = `["эй бобик", "бобик", "запиши", "сделай", "напомни", "поставь", "[unk]"]`
+
+	wakeWord        = "эй бобик"
+
+)
+
+
+
 // Start begins the main wake word detection loop.
+
 func (o *Orchestrator) Start(ctx context.Context) error {
+
 	log.Println("Bobik is listening for 'Эй, Бобик'...")
 
+
+
 	for {
+
 		select {
+
 		case <-ctx.Done():
+
 			return ctx.Err()
+
 		default:
+
 			if err := o.runOnce(ctx); err != nil {
+
 				log.Printf("error in orchestrator loop: %v", err)
+
 			}
+
 		}
+
 	}
+
 }
 
+
+
 func (o *Orchestrator) runOnce(ctx context.Context) error {
+
 	audioChan := make(chan []int16, 100)
+
 	
+
 	// Create a sub-context that we can cancel to stop the recorder goroutine
+
 	recCtx, cancelRec := context.WithCancel(ctx)
+
 	defer cancelRec()
 
+
+
 	go func() {
+
 		defer close(audioChan)
+
 		for {
+
 			select {
+
 			case <-recCtx.Done():
+
 				return
-								default:
-									samples, err := o.Recorder.Read()
-									if err != nil {
-										return
-									}
-									// Copy the buffer to avoid data corruption by the next Read()
-									samplesCopy := make([]int16, len(samples))
-									copy(samplesCopy, samples)
-									audioChan <- samplesCopy
-								}		}
+
+			default:
+
+				samples, err := o.Recorder.Read()
+
+				if err != nil {
+
+					return
+
+				}
+
+				// Copy the buffer to avoid data corruption by the next Read()
+
+				samplesCopy := make([]int16, len(samples))
+
+				copy(samplesCopy, samples)
+
+				audioChan <- samplesCopy
+
+			}
+
+		}
+
 	}()
 
-	// 1. Listen for Wake Word
-	detected, err := o.STT.ListenForWakeWord(audioChan, `["эй бобик", "[unk]"]`, "эй бобик")
+
+
+	// 1. Listen for Wake Word with prioritized grammar
+
+	detected, err := o.STT.ListenForWakeWord(audioChan, wakeWordGrammar, wakeWord)
+
+
 	if err != nil {
 		return err
 	}
