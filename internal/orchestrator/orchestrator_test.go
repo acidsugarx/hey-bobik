@@ -67,6 +67,7 @@ func TestOrchestratorFlow(t *testing.T) {
 		Notifier: notif,
 		LLM:      llm,
 		Obsidian: obs,
+		Memory:   NewContextMemory(5),
 	}
 
 	err := o.runOnce(context.Background())

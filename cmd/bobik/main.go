@@ -56,6 +56,7 @@ func main() {
 		Notifier: n,
 		LLM:      lClient,
 		Obsidian: oService,
+		Memory:   orchestrator.NewContextMemory(10),
 	}
 
 	// Handle Graceful Shutdown

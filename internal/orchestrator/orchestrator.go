@@ -1,8 +1,12 @@
 package orchestrator
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"log"
+	"strings"
+	"text/template"
 )
 
 // Recorder defines the interface for audio capture.
@@ -38,12 +42,22 @@ type Orchestrator struct {
 	Notifier Notifier
 	LLM      LLMClient
 	Obsidian ObsidianService
+	Memory   *ContextMemory
 }
 
-const systemPrompt = `Ты помощник Linux по имени Бобик. 
-Твоя задача — извлечь содержание заметки из текста, который продиктовал пользователь.
-Верни только текст заметки, без лишних слов, кавычек или пояснений.
-Если пользователь просит сделать заметку, убери вводные слова вроде "запиши", "сделай заметку".`
+const systemPrompt = `Ты — Бобик, интеллектуальный голосовой помощник для Linux. 
+
+Твоя задача состоит из двух этапов:
+1. **Очистка (Refinement):** Исправь ошибки распознавания речи (STT) в полученном тексте. Учти контекст предыдущих команд, если они есть. Исправь грамматику, падежи и опечатки, сохраняя смысл.
+2. **Извлечение (Extraction):** Выдели суть команды для записи в заметку. Удали вводные слова ("запиши", "сделай заметку", "эй бобик"). 
+
+Верни ТОЛЬКО очищенный текст заметки. Не пиши "Вот ваша заметка" или "Исправленный текст:". Только содержание.
+
+Контекст последних действий:
+{{.Context}}
+
+Текст от пользователя:
+{{.Input}}`
 
 // Start begins the main wake word detection loop.
 func (o *Orchestrator) Start(ctx context.Context) error {
@@ -109,23 +123,90 @@ func (o *Orchestrator) runOnce(ctx context.Context) error {
 			return nil
 		}
 
-		// 3. Process with LLM
-		noteContent, err := o.LLM.Generate(ctx, systemPrompt, text)
-		if err != nil {
-			o.Notifier.Notify(ctx, "Bobik Error", "LLM failed")
-			return err
+				// 3. Process with LLM
+
+				history := o.Memory.GetHistory()
+
+				var contextStr strings.Builder
+
+				for _, entry := range history {
+
+					contextStr.WriteString(fmt.Sprintf("- Команда: %s, Действие: %s\n", entry.Command, entry.Action))
+
+				}
+
+		
+
+				tmpl, err := template.New("prompt").Parse(systemPrompt)
+
+				if err != nil {
+
+					return fmt.Errorf("failed to parse prompt template: %w", err)
+
+				}
+
+		
+
+				var promptBuf bytes.Buffer
+
+				err = tmpl.Execute(&promptBuf, map[string]string{
+
+					"Context": contextStr.String(),
+
+					"Input":   text,
+
+				})
+
+				if err != nil {
+
+					return fmt.Errorf("failed to execute prompt template: %w", err)
+
+				}
+
+		
+
+				noteContent, err := o.LLM.Generate(ctx, "", promptBuf.String())
+
+				if err != nil {
+
+					o.Notifier.Notify(ctx, "Bobik Error", "LLM failed")
+
+					return err
+
+				}
+
+				log.Printf("Note content: %s", noteContent)
+
+		
+
+				// 4. Save to Obsidian
+
+				err = o.Obsidian.AppendToDailyNote(noteContent)
+
+				if err != nil {
+
+					o.Notifier.Notify(ctx, "Bobik Error", "Failed to save note")
+
+					return err
+
+				}
+
+		
+
+				// 5. Update Memory
+
+				o.Memory.Add(text, "Saved note: "+noteContent)
+
+		
+
+				o.Notifier.Notify(ctx, "Bobik", "Note saved to Daily Notes")
+
+			}
+
+		
+
+			return nil
+
 		}
-		log.Printf("Note content: %s", noteContent)
 
-		// 4. Save to Obsidian
-		err = o.Obsidian.AppendToDailyNote(noteContent)
-		if err != nil {
-			o.Notifier.Notify(ctx, "Bobik Error", "Failed to save note")
-			return err
-		}
-
-		o.Notifier.Notify(ctx, "Bobik", "Note saved to Daily Notes")
-	}
-
-	return nil
-}
+		
