@@ -16,8 +16,8 @@ Implement STT post-processing and refined prompting.
 
 - [x] Task: Refine System Prompt for Qwen 3 (9b288e4)
     - [x] Update orchestrator with advanced multi-stage prompt (Clean -> Process)
-- [ ] Task: Implement Dynamic Grammar in STT
-    - [ ] Update `internal/stt` to accept and use a command-focused grammar list
+- [x] Task: Implement Dynamic Grammar in STT (7511b14)
+    - [x] Update `internal/stt` to accept and use a command-focused grammar list
 - [ ] Task: Implement STT Post-processing Logic
     - [ ] Write Tests: Verify LLM-based text cleanup of garbled STT input
     - [ ] Update orchestrator flow to include the "Clean" step
