@@ -33,9 +33,9 @@ Connect the transcription to Ollama and orchestrate the full flow.
 - [x] Task: Implement Ollama Client (1cd5685)
     - [x] Write Tests: Mock Ollama API response
     - [x] Implement `internal/llm` package (HTTP client)
-- [ ] Task: Implement Orchestrator Logic
-    - [ ] Write Tests: Verify flow from "Wake" -> "Record" -> "Transcribe" -> "Process" -> "Note"
-    - [ ] Implement main orchestrator in `internal/orchestrator`
+- [x] Task: Implement Orchestrator Logic (230614b)
+    - [x] Write Tests: Verify flow from "Wake" -> "Record" -> "Transcribe" -> "Process" -> "Note"
+    - [x] Implement main orchestrator in `internal/orchestrator`
 - [ ] Task: Create Main Entry Point
     - [ ] Implement `cmd/bobik/main.go` to wire all components
 - [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
