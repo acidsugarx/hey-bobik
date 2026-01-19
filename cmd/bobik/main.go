@@ -11,6 +11,7 @@ import (
 	"hey-bobik/internal/tools/notifier"
 	"hey-bobik/internal/tools/obsidian"
 	"hey-bobik/internal/tools/timer"
+	"hey-bobik/internal/ui/tray"
 	"log"
 	"os"
 	"os/signal"
@@ -56,6 +57,10 @@ func main() {
 	}
 	defer recorder.Stop()
 
+	// Handle Graceful Shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// 4. Initialize Orchestrator
 	o := &orchestrator.Orchestrator{
 		Recorder: recorder,
@@ -68,9 +73,19 @@ func main() {
 		Memory:   orchestrator.NewContextMemory(10),
 	}
 
-	// Handle Graceful Shutdown
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	// 5. Initialize Tray UI
+	trayManager := tray.New(func() {
+		log.Println("Tray exited, shutting down...")
+		cancel()
+	})
+
+	// Start Orchestrator in a goroutine
+	go func() {
+		if err := o.Start(ctx); err != nil && err != context.Canceled {
+			log.Printf("Orchestrator stopped with error: %v", err)
+		}
+		os.Exit(0)
+	}()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -81,8 +96,6 @@ func main() {
 		cancel()
 	}()
 
-	// Start Orchestrator
-	if err := o.Start(ctx); err != nil && err != context.Canceled {
-		log.Fatalf("Orchestrator stopped with error: %v", err)
-	}
+	// Run Tray on the main thread
+	trayManager.Run()
 }
