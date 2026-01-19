@@ -4,6 +4,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: Intelligence Boost: Qwen 3 Integration, STT Post-processing, Dynamic Grammar & Context Memory**
+- [x] **Track: Intelligence Boost: Qwen 3 Integration, STT Post-processing, Dynamic Grammar & Context Memory**
   *Link: [./tracks/intel_boost_20260119/](./tracks/intel_boost_20260119/)*
 
