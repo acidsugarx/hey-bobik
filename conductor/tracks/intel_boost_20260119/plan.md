@@ -14,8 +14,8 @@ Upgrade to Qwen 3 and update the LLM client configuration.
 ## Phase 2: Intelligence & Logic
 Implement STT post-processing and refined prompting.
 
-- [ ] Task: Refine System Prompt for Qwen 3
-    - [ ] Update orchestrator with advanced multi-stage prompt (Clean -> Process)
+- [x] Task: Refine System Prompt for Qwen 3 (9b288e4)
+    - [x] Update orchestrator with advanced multi-stage prompt (Clean -> Process)
 - [ ] Task: Implement Dynamic Grammar in STT
     - [ ] Update `internal/stt` to accept and use a command-focused grammar list
 - [ ] Task: Implement STT Post-processing Logic
