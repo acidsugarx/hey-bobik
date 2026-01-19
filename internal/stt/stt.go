@@ -83,10 +83,26 @@ func (e *Engine) Transcribe(audioChan <-chan []int16) (string, error) {
 	// Listen for a max of 7 seconds or until we get some results
 	timeout := time.After(7 * time.Second)
 
+	var silenceTimer *time.Timer
+	silenceDelay := 1 * time.Second
+
 	for {
 		select {
 		case <-timeout:
-			// Final results from recognizer
+			var res RecognitionResult
+			if err := json.Unmarshal([]byte(rec.FinalResult()), &res); err == nil {
+				if res.Text != "" {
+					fullText += res.Text
+				}
+			}
+			return fullText, nil
+		case <-func() <-chan time.Time {
+			if silenceTimer != nil {
+				return silenceTimer.C
+			}
+			return nil
+		}():
+			// Silence duration reached, return what we have
 			var res RecognitionResult
 			if err := json.Unmarshal([]byte(rec.FinalResult()), &res); err == nil {
 				if res.Text != "" {
@@ -104,17 +120,31 @@ func (e *Engine) Transcribe(audioChan <-chan []int16) (string, error) {
 				byteBuf[i*2+1] = byte(s >> 8)
 			}
 
-			if rec.AcceptWaveform(byteBuf) != 0 {
+			if rec.AcceptWaveform(byteBuf) == 1 {
+				// Silence detected by Vosk, start/reset the silence timer
+				if silenceTimer == nil {
+					silenceTimer = time.NewTimer(silenceDelay)
+				} else {
+					if !silenceTimer.Stop() {
+						select {
+						case <-silenceTimer.C:
+						default:
+						}
+					}
+					silenceTimer.Reset(silenceDelay)
+				}
+			} else {
+				// User is speaking, stop the timer if it exists
+				if silenceTimer != nil {
+					silenceTimer.Stop()
+					silenceTimer = nil
+				}
+				
+				// Optional: pull intermediate results to show progress (for future UI)
 				var res RecognitionResult
-				if err := json.Unmarshal([]byte(rec.Result()), &res); err != nil {
-					continue
+				if err := json.Unmarshal([]byte(rec.PartialResult()), &res); err == nil {
+					// We could append partial results here if needed
 				}
-				if res.Text != "" {
-					fullText += res.Text + " "
-				}
-				// If we have some text, we can wait a bit more for the rest or return 
-				// if we think the user is done. For MVP, we'll continue until timeout 
-				// or a significant result.
 			}
 		}
 	}
