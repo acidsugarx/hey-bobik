@@ -1,6 +1,6 @@
 # Implementation Plan: Bobik MVP Core
 
-## Phase 1: Project Scaffolding & Basic Integration
+## Phase 1: Project Scaffolding & Basic Integration [checkpoint: da0fd39]
 Initialize the Go project and implement the most basic system integrations (Notifications and File System).
 
 - [x] Task: Initialize Go module and project structure (2688d91)
