@@ -1,6 +1,6 @@
 # Implementation Plan: System Tray Indicator
 
-## Phase 1: Tray Infrastructure
+## Phase 1: Tray Infrastructure [checkpoint: ffb63a0]
 Integrate the tray library and set up the main thread loop.
 
 - [x] Task: Set up Tray Library & Icons (45ce8f4)
