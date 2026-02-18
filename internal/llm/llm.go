@@ -7,20 +7,28 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
+)
+
+const (
+	defaultTimeout = 60 * time.Second
 )
 
 // Client handles communication with the Ollama API.
 type Client struct {
-	BaseURL string
-	Model   string
+	BaseURL    string
+	Model      string
+	Timeout    time.Duration
+	httpClient *http.Client
 }
 
 // GenerateRequest represents the request body for Ollama's generate API.
 type GenerateRequest struct {
-	Model  string `json:"model"`
-	Prompt string `json:"prompt"`
-	System string `json:"system"`
-	Stream bool   `json:"stream"`
+	Model  string   `json:"model"`
+	Prompt string   `json:"prompt"`
+	System string   `json:"system"`
+	Stream bool     `json:"stream"`
+	Images []string `json:"images,omitempty"` // Для vision моделей: base64-encoded изображения
 }
 
 // GenerateResponse represents the response body from Ollama's generate API.
@@ -34,16 +42,27 @@ func New(baseURL, model string) *Client {
 	return &Client{
 		BaseURL: baseURL,
 		Model:   model,
+		Timeout: defaultTimeout,
+		httpClient: &http.Client{
+			Timeout: defaultTimeout,
+		},
 	}
 }
 
 // Generate sends a prompt to Ollama and returns the generated response.
 func (c *Client) Generate(ctx context.Context, system, prompt string) (string, error) {
+	return c.GenerateWithImages(ctx, system, prompt, nil)
+}
+
+// GenerateWithImages отправляет запрос к Ollama с поддержкой изображений (для vision моделей).
+// images - список изображений в формате base64.
+func (c *Client) GenerateWithImages(ctx context.Context, system, prompt string, images []string) (string, error) {
 	reqBody := GenerateRequest{
 		Model:  c.Model,
 		Prompt: prompt,
 		System: system,
 		Stream: false,
+		Images: images,
 	}
 
 	jsonData, err := json.Marshal(reqBody)
@@ -57,7 +76,7 @@ func (c *Client) Generate(ctx context.Context, system, prompt string) (string, e
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to send request: %w", err)
 	}

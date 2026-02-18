@@ -8,6 +8,12 @@ import (
 	vosk "github.com/alphacep/vosk-api/go"
 )
 
+const (
+	defaultSampleRate   = 16000.0
+	defaultTimeout      = 7 * time.Second
+	defaultSilenceDelay = 1 * time.Second
+)
+
 // Engine handles speech-to-text and wake word detection using Vosk.
 type Engine struct {
 	ModelPath string
@@ -63,7 +69,7 @@ func (e *Engine) ListenForWakeWord(audioChan <-chan []int16, grammar string, wak
 			if err := json.Unmarshal([]byte(rec.Result()), &res); err != nil {
 				continue
 			}
-			if fmt.Sprintf("%s", res.Text) == wakeWord {
+			if res.Text == wakeWord {
 				return true, nil
 			}
 		}
@@ -138,12 +144,6 @@ func (e *Engine) Transcribe(audioChan <-chan []int16) (string, error) {
 				if silenceTimer != nil {
 					silenceTimer.Stop()
 					silenceTimer = nil
-				}
-				
-				// Optional: pull intermediate results to show progress (for future UI)
-				var res RecognitionResult
-				if err := json.Unmarshal([]byte(rec.PartialResult()), &res); err == nil {
-					// We could append partial results here if needed
 				}
 			}
 		}

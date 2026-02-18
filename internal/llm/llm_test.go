@@ -14,10 +14,7 @@ func TestGenerate(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := &Client{
-		BaseURL: ts.URL,
-		Model:   "test-model",
-	}
+	client := New(ts.URL, "test-model")
 
 	resp, err := client.Generate(context.Background(), "System prompt", "User prompt")
 	if err != nil {
@@ -36,10 +33,7 @@ func TestGenerateError(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := &Client{
-		BaseURL: ts.URL,
-		Model:   "test-model",
-	}
+	client := New(ts.URL, "test-model")
 
 	_, err := client.Generate(context.Background(), "System", "Prompt")
 	if err == nil {
@@ -53,10 +47,7 @@ func TestGenerateDecodeError(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := &Client{
-		BaseURL: ts.URL,
-		Model:   "test-model",
-	}
+	client := New(ts.URL, "test-model")
 
 	_, err := client.Generate(context.Background(), "System", "Prompt")
 	if err == nil {

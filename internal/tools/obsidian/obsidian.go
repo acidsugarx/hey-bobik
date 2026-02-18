@@ -89,3 +89,48 @@ func (s *Service) RewriteLastNote(content string) error {
 	return os.WriteFile(filePath, []byte(strings.Join(newLines, "\n")),
 		0644)
 }
+
+// DeleteLastNote removes the last entry from the daily note.
+func (s *Service) DeleteLastNote() error {
+	now := s.Now()
+	fileName := fmt.Sprintf("%s%s.md", s.Prefix, now.Format("2006-01-02"))
+	filePath := filepath.Join(s.VaultPath, fileName)
+
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return fmt.Errorf("no daily note found")
+	}
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to read daily note: %w", err)
+	}
+
+	lines := strings.Split(string(data), "\n")
+	lastHeaderIdx := -1
+	for i := len(lines) - 1; i >= 0; i-- {
+		if strings.HasPrefix(lines[i], "## ") {
+			lastHeaderIdx = i
+			break
+		}
+	}
+
+	if lastHeaderIdx == -1 {
+		return fmt.Errorf("no entries to delete")
+	}
+
+	// Keep everything up to the last header (excluding it)
+	newLines := lines[:lastHeaderIdx]
+
+	// Remove trailing empty lines
+	for len(newLines) > 0 && strings.TrimSpace(newLines[len(newLines)-1]) == "" {
+		newLines = newLines[:len(newLines)-1]
+	}
+
+	// Add a final newline
+	content := strings.Join(newLines, "\n")
+	if content != "" {
+		content += "\n\n"
+	}
+
+	return os.WriteFile(filePath, []byte(content), 0644)
+}

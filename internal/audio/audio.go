@@ -46,13 +46,16 @@ func (r *Recorder) Start() error {
 	return nil
 }
 
-// Read captures a chunk of audio into the internal buffer and returns it.
+// Read captures a chunk of audio into the internal buffer and returns a copy.
 func (r *Recorder) Read() ([]int16, error) {
 	err := r.stream.Read()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read from stream: %w", err)
 	}
-	return r.buffer, nil
+	// Return a copy to avoid data corruption when buffer is reused
+	result := make([]int16, len(r.buffer))
+	copy(result, r.buffer)
+	return result, nil
 }
 
 // Stop ends audio capture and cleans up resources.

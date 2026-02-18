@@ -15,7 +15,7 @@ func (m *mockRecorder) Read() ([]int16, error) {
 }
 
 type mockSTT struct {
-	wakeDetected bool
+	wakeDetected  bool
 	transcription string
 }
 
@@ -60,9 +60,21 @@ func (m *mockObsidian) RewriteLastNote(content string) error {
 	return nil
 }
 
-type mockTimer struct{}
+func (m *mockObsidian) DeleteLastNote() error {
+	m.content = ""
+	return nil
+}
+
+type mockTimer struct {
+	cancelled int
+}
 
 func (m *mockTimer) Start(name string, duration time.Duration) {}
+
+func (m *mockTimer) CancelAll() int {
+	m.cancelled++
+	return 1
+}
 
 type mockClock struct{}
 
